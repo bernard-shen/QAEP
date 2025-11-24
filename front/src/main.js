@@ -1,0 +1,50 @@
+import { createApp } from 'vue'
+import App from './App.vue'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import api from './api'
+import './assets/less/index.less'
+import store from './store'
+import router from './router'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+
+const app = createApp(App)
+
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+}
+
+app.config.globalProperties.$api = api
+store.commit("addMenu", router);
+
+// 在添加了菜单路由之后，做路由守卫的工作
+// 校验现有的path 是否已经在已知的动态路由配置中，
+function checkRouter(path) {
+  let hasCheck = router.getRoutes().filter(route => route.path == path).length
+  if (hasCheck) {
+    return true
+  } else {
+    return false
+  }
+}
+
+router.beforeEach((to, from, next) => {
+  store.commit('getToken')
+  const token = store.state.token
+  if (!token && to.name !== 'login') {
+    next({name: 'login'})
+  } else if (!checkRouter(to.path)) {
+    next({name: 'home'})
+  } else {
+    next()
+  }
+})
+
+app.use(router)
+    .use(store)
+    .use(ElementPlus)
+    .mount('#app')
+
+
+
+
